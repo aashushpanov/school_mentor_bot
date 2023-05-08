@@ -5,3 +5,6 @@
 /.vscode/
 /.ipynb_checkpoints/
 /.devcontainer/
+/pgadmin/
+/pgdata/
+/bot/test/

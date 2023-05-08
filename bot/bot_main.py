@@ -2,17 +2,25 @@ import asyncio
 
 from aiogram import executor, Dispatcher
 
-from loader import dp, bot
+from handlers import register_handlers
+from commands.user import set_user_commands
 
+
+from loader import dp, bot
+from states.registration import register_registration_handlers
 
 
 TIMEOUT = 20*60
 
+
 def manager():
     pass
 
+
 async def setup(dp: Dispatcher):
-    pass
+    register_registration_handlers(dp)
+    register_handlers(dp)
+    await set_user_commands(bot)
 
 
 def repeat(coro, loop):
