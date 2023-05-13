@@ -37,6 +37,52 @@ def add_user(user_id, name, age, post, is_class_m, grade):
 
 
 @logger.catch
+def change_user_name(user_id, new_name):
+    with database() as (cur, conn, status):
+        sql = "UPDATE users SET name = %s WHERE user_id = %s"
+        cur.execute(sql, [new_name, user_id])
+        conn.commit()
+    return status.status
+
+
+@logger.catch
+def change_user_photo(user_id, new_photo):
+    with database() as (cur, conn, status):
+        sql = "UPDATE users SET photo_id = %s WHERE user_id = %s"
+        cur.execute(sql, [new_photo, user_id])
+        conn.commit()
+    return status.status
+
+
+@logger.catch
+def change_user_direction(user_id, new_direction):
+    with database() as (cur, conn, status):
+        sql = "UPDATE users SET direction = %s WHERE user_id = %s"
+        cur.execute(sql, [new_direction, user_id])
+        conn.commit()
+    return status.status
+
+
+@logger.catch
+def change_user_bio(user_id, new_bio):
+    with database() as (cur, conn, status):
+        sql = "UPDATE users SET bio = %s WHERE user_id = %s"
+        cur.execute(sql, [new_bio, user_id])
+        conn.commit()
+    return status.status
+
+
+@logger.catch()
+def delete_user(user_id):
+    with database() as (cur, conn, status):
+        sql = "DELETE FROM users WHERE user_id = %s"
+        cur.execute(sql, [user_id])
+        conn.commit()
+        logger.info('Удален пользователь {}'.format(user_id))
+    return status.status
+
+
+@logger.catch
 def add_mentor(user_id, tg_nick, file_id, direction, bio):
     with database() as (cur, conn, status):
         sql = "UPDATE USERS SET tg_nick = %s, photo_id = %s, direction = %s, bio = %s, is_admin=1, is_confirmed=0" \

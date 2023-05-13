@@ -39,21 +39,23 @@ async def is_exist(user_id):
 @logger.catch
 def get_user(user_id) -> pd.Series:
     with database() as (cur, conn, status):
-        sql = "SELECT name, age, post, is_class_m, grade, is_admin FROM USERS WHERE user_id = %s"
+        sql = "SELECT name, age, post, is_class_m, grade, is_admin, photo_id, direction, bio, tg_nick" \
+              " FROM USERS WHERE user_id = %s"
         cur.execute(sql, [user_id])
         result = cur.fetchone()
-        data = pd.Series(result, index=['name', 'age', 'post', 'is_class_m', 'grade', 'is_admin'])
+        index = ['name', 'age', 'post', 'is_class_m', 'grade', 'is_admin', 'photo_id', 'direction', 'bio', 'tg_nick']
+        data = pd.Series(result, index=index)
     return data
 
 
 @logger.catch
 def get_mentors():
     with database() as (cur, conn, status):
-        sql = "SELECT name, age, is_class_m, grade, post, direction, bio, photo_id, tg_nick FROM USERS" \
-              " WHERE is_admin = 1"
+        sql = "SELECT name, age, is_class_m, grade, post, direction, bio, photo_id, tg_nick, is_admin FROM USERS" \
+              " WHERE is_admin = 2"
         cur.execute(sql, [])
         result = cur.fetchall()
-        columns = ['name', 'age', 'is_class_m', 'grade', 'post', 'direction', 'bio', 'photo_id', 'tg_nick']
+        columns = ['name', 'age', 'is_class_m', 'grade', 'post', 'direction', 'bio', 'photo_id', 'tg_nick', 'is_admin']
         data = pd.DataFrame(result, columns=columns)
     return data
 

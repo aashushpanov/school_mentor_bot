@@ -10,6 +10,7 @@ from data.aliases import posts_aliases
 from filters.filters import delete_message
 from utils.db.get import get_user, get_mentors
 from keyboards.keyboards import switch_keyboard, page_move_call
+from utils.menu.menu_structure import user_caption
 from utils.menu.user_menu import find_mentor_call
 
 
@@ -34,22 +35,9 @@ def norm_values(value, column):
             return value
 
 
-def mentor_caption(mentor):
-    name = mentor['name']
-    is_class_m = 'да' if mentor['is_class_m'] == 1 else "нет"
-    age = mentor['age']
-    post = posts_aliases[mentor['post']]
-    direction = mentor['direction']
-    bio = mentor['bio']
-    tg_nick = mentor['tg_nick']
-    text = "{}\n{} лет\nКлассный руководитель: {}\n{}\n{}\n{}\nКонтакт {}"\
-        .format(name, age, is_class_m, post, direction, bio, tg_nick)
-    photo = mentor['photo_id']
-    return text, photo
-
-
 @logger.catch()
 async def start(callback: types.CallbackQuery, state: FSMContext):
+    logger.info(str(callback.data))
     user = get_user(callback.from_user.id)
     mentors = get_mentors()
     if mentors.empty:
@@ -74,7 +62,7 @@ async def start(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(mentors=mentors)
     await state.update_data(page=page)
     await state.update_data(total_pages=total_pages)
-    caption, photo = mentor_caption(mentor)
+    caption, photo = user_caption(mentor)
     await callback.message.answer_photo(photo=photo, caption=caption, reply_markup=markup)
     await FindMentor.choose_mentor.set()
 
@@ -93,7 +81,7 @@ async def turn_page(callback: types.CallbackQuery, state: FSMContext, callback_d
     mentors = data.get('mentors')
     await state.update_data(page=page)
     mentor = mentors.iloc[page]
-    caption, photo = mentor_caption(mentor)
+    caption, photo = user_caption(mentor)
     markup = switch_keyboard(page, total_pages, cancel_button=True)
     await delete_message(callback.message)
     await callback.message.answer_photo(photo=photo, caption=caption, reply_markup=markup)

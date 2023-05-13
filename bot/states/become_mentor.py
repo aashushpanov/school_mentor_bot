@@ -6,8 +6,8 @@ from aiogram.utils.callback_data import CallbackData
 from loader import bot
 
 from utils.db.get import get_access
-from utils.db.add import add_mentor
-from utils.menu.user_menu import become_mentor_call
+from utils.db.add import add_mentor, change_user_photo, change_user_direction, change_user_bio
+from utils.menu.user_menu import become_mentor_call, change_photo_call, change_direction_call, change_bio_call
 from filters.filters import delete_message
 from utils.db.add import confirm_mentor
 from utils.db.get import is_mentor_already_registered, get_user
@@ -20,50 +20,103 @@ mentor_proposal_call = CallbackData('mentor_proposal', 'a', 'id')
 
 def register_mentor_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(start, become_mentor_call.filter())
-    dp.register_message_handler(get_photo, content_types=types.ContentTypes.PHOTO, state=BecomeMentor.get_photo)
-    dp.register_message_handler(get_direction, state=BecomeMentor.get_direction)
-    dp.register_message_handler(get_bio, state=BecomeMentor.get_bio)
+    dp.register_message_handler(get_photo, content_types=types.ContentTypes.PHOTO,
+                                state=[BecomeMentor.get_photo, BecomeMentor.change_photo])
+    dp.register_message_handler(get_direction, state=[BecomeMentor.get_direction, BecomeMentor.change_direction])
+    dp.register_message_handler(get_bio, state=[BecomeMentor.get_bio, BecomeMentor.change_bio])
+
+    dp.register_callback_query_handler(start, change_photo_call.filter())
+    dp.register_callback_query_handler(change_direction, change_direction_call.filter())
+    dp.register_callback_query_handler(change_bio, change_bio_call.filter())
 
 
 class BecomeMentor(StatesGroup):
     get_photo = State()
+    change_photo = State('change_photo')
     get_direction = State()
+    change_direction = State('change_direction')
     get_bio = State()
+    change_bio = State('change_bio')
 
 
 async def start(callback: types.CallbackQuery):
-    access = get_access(callback.from_user.id)
-    await delete_message(callback.message)
-    if access == 1:
-        await callback.answer('Вы уже наставник.', show_alert=True)
+    callback_name = callback.data.split(':')[0]
+    if callback_name == 'change_photo':
+        await BecomeMentor.change_photo.set()
     else:
-        await callback.answer()
+        access = get_access(callback.from_user.id)
+        await delete_message(callback.message)
+        if access == 2:
+            await callback.answer('Вы уже наставник.', show_alert=True)
+            return
         if is_mentor_already_registered(user_id=callback.from_user.id) == 0:
             await send_mentor_proposal(callback.from_user.id)
             return
-        await callback.message.answer('Загрузите свою фотографию')
         await BecomeMentor.get_photo.set()
+    await callback.answer()
+    await callback.message.answer('Загрузите свою фотографию')
 
 
 async def get_photo(message: types.Message, state: FSMContext):
     if photo := message.photo:
+        state_name = await state.get_state()
         file_id = photo[-1].file_id
         await state.update_data(file_id=file_id)
+        if state_name == 'BecomeMentor:change_photo':
+            status = change_user_photo(message.from_user.id, file_id)
+            if status:
+                await message.answer('Фотография изменена')
+            else:
+                await message.answer('Что-то пошло не так')
+            await state.finish()
+            return
         await message.answer('Чем вы занимаетесь в школе?')
         await BecomeMentor.get_direction.set()
+    else:
+        await message.answer('Загрузите фотографию')
+
+
+async def change_direction(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.answer('Чем вы занимаетесь в школе?')
+    await BecomeMentor.change_photo.set()
 
 
 async def get_direction(message: types.Message, state: FSMContext):
     direction = message.text
     await state.update_data(direction=direction)
-    await message.answer('Разкажите о себе')
+    state_name = await state.get_state()
+    if state_name == 'BecomeMentor:change_direction':
+        status = change_user_direction(message.from_user.id, direction)
+        if status:
+            await message.answer('Направление изменено')
+        else:
+            await message.answer('Что-то пошло не так')
+        await state.finish()
+        return
+    await message.answer('Раccкажите о себе')
     await BecomeMentor.get_bio.set()
 
 
+async def change_bio(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.answer('Раccкажите о себе')
+    await BecomeMentor.change_bio.set()
+
+
 async def get_bio(message: types.Message, state: FSMContext):
+    bio = message.text
+    state_name = await state.get_state()
+    if state_name == 'BecomeMentor:change_bio':
+        status = change_user_bio(message.from_user.id, bio)
+        if status:
+            await message.answer('Направление изменено')
+        else:
+            await message.answer('Что-то пошло не так')
+        await state.finish()
+        return
     user_id = message.from_user.id
     tg_nick = '@' + message.from_user.username
-    bio = message.text
     data = await state.get_data()
     file_id = data.get('file_id')
     direction = data.get('direction')

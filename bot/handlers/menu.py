@@ -9,7 +9,7 @@ from utils.menu.MenuNode import move
 from utils.db.get import get_access
 from utils.menu.menu_structure import user_menu, list_menu
 
-reg_call = CallbackData('reg_call')
+reg_call = CallbackData('reg')
 
 
 def main_menus_handlers(dp: Dispatcher):

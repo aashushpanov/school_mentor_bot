@@ -3,6 +3,7 @@ import pandas as pd
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from loguru import logger
 
 from filters.filters import delete_message
 from loader import bot
