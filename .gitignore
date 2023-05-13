@@ -8,3 +8,4 @@
 /pgadmin/
 /pgdata/
 /bot/test/
+*.pyc

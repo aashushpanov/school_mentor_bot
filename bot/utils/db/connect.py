@@ -1,5 +1,6 @@
 import psycopg2
 import contextlib
+from loguru import logger
 
 from data import config
 
@@ -43,7 +44,7 @@ def database(url=None):
     try:
         yield cur, conn, status
     except Exception as err:
-        print(err)
+        logger.error(err)
         status.error()
     finally:
         cur.close()

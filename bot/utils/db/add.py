@@ -1,13 +1,15 @@
 import pandas as pd
 from psycopg2.extras import Json
 import datetime as dt
+from loguru import logger
 
 from pandas import DataFrame, Series
 
 from .connect import database
 
 
-def add_user(user_id, name, post, is_class_m, grade):
+@logger.catch
+def add_user(user_id, name, age, post, is_class_m, grade):
     """
     Эта функция добавляет нового пользователя в базу данных с указанным идентификатором пользователя,
     именем, должностью, статусом членства в классе и оценкой.
@@ -26,8 +28,52 @@ def add_user(user_id, name, post, is_class_m, grade):
     пользователя в таблицу «users».
     """
     with database() as (curr, conn, status):
-        sql = "INSERT INTO users (user_id, name, post, is_class_m, grade, is_admin) VALUES (%s, %s, %s, %s, %s, 0)"
-        curr.execute(sql, [user_id, name, post, is_class_m, grade])
+        sql = "INSERT INTO users (user_id, name, age, post, is_class_m, grade, is_admin)" \
+              " VALUES (%s, %s, %s, %s, %s, %s, 0)"
+        curr.execute(sql, [user_id, name, age, post, is_class_m, grade])
         conn.commit()
+        logger.info('Регистрация пользователя {}, user_id:{}'.format(name, user_id))
     return status.status
 
+
+@logger.catch
+def add_mentor(user_id, tg_nick, file_id, direction, bio):
+    with database() as (cur, conn, status):
+        sql = "UPDATE USERS SET tg_nick = %s, photo_id = %s, direction = %s, bio = %s, is_admin=1, is_confirmed=0" \
+              " WHERE user_id = %s"
+        cur.execute(sql, [tg_nick, file_id, direction, bio, user_id])
+        conn.commit()
+        logger.info('Регистрация заявки наставника user_id: {}'.format(user_id))
+    return status.status
+
+
+@logger.catch
+def confirm_mentor(mentor_id):
+    with database() as (cur, conn, status):
+        sql = "UPDATE users SET is_confirmed=1 WHERE user_id = %s"
+        cur.execute(sql, [mentor_id])
+        conn.commit()
+        logger.info("Подтверждение наставника {}".format(mentor_id))
+    return status.status
+
+
+@logger.catch
+def add_question(message_id, from_user, question, topic):
+    question_date = dt.date.today()
+    with database() as (cur, conn, status):
+        sql = "INSERT INTO question (message_id, from_user, question_text, question_date, topic, is_valid)" \
+              " VALUES (%s, %s, %s, %s, 0) RETURNING question_id"
+        cur.execute(sql, [message_id, from_user, question, question_date, topic])
+        question_id = cur.fetchone()[0]
+        conn.commit()
+        logger.info("Задан вопрос по теме {}: {}".format(topic, question))
+    return status.status, question_id
+
+
+@logger.catch
+def set_non_valid_question(questions_id):
+    with database() as (cur, conn, status):
+        sql = "UPDATE questions SET is_active = 0 WHERE id = ANY(%s)"
+        cur.execute(sql, [questions_id])
+    return status.status
+            

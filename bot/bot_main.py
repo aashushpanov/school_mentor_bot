@@ -1,25 +1,23 @@
 import asyncio
 
 from aiogram import executor, Dispatcher
+from fone_task.fone_task_manager import manager
 
 from handlers import register_handlers
 from commands.user import set_user_commands
 
 
 from loader import dp, bot
+from states import register_states_handlers
 from states.registration import register_registration_handlers
 
 
 TIMEOUT = 20*60
 
 
-def manager():
-    pass
-
-
 async def setup(dp: Dispatcher):
-    register_registration_handlers(dp)
     register_handlers(dp)
+    register_states_handlers(dp)
     await set_user_commands(bot)
 
 

@@ -2,14 +2,14 @@ version: "3.9"
 
 services:
   schpk_bot:
-    build: bot/
+#    build: ./bot/
     env_file:
       - env_vars/sch_pk.env
-    image: aashushpanov/my_repo:mentor_bot
+    image: aashushpanov/my_repo:school_mentor_bot
     container_name: mentor_bot_pk
     networks:
       - postgres
-
+      
   postgres:
     image: postgres:13.3
     environment:
@@ -20,6 +20,7 @@ services:
     volumes:
       - ../2. Init Database:/docker-entrypoint-initdb.d
       - .:/var/lib/postgresql/data
+    restart: always
     ports:
       - "5432:5432"
     networks:
@@ -44,6 +45,7 @@ services:
           memory: 1G
     networks:
       - postgres
+
 
 networks:
   postgres:
